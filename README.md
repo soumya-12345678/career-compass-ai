@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# 🧭 Career Compass AI
 
-## Project info
+**Intelligent Career Recommendation Platform using AI & Data Analytics**
+> Built for WITCHAR-2026 |
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Career Compass AI is an advanced, bias-free career guidance system. It goes beyond simple keyword matching by using Large Language Models (LLMs) to understand a candidate's context, evaluating their GitHub repositories for verifiable skills, and matching them with real-world, real-time job listings tailored to their exact seniority level.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Key Features
 
-**Use Lovable**
+* **📄 Smart Resume Parsing:** Upload PDF, DOC, or DOCX files. The system reads the unstructured text to understand projects, education, and experience.
+* **🐙 GitHub Verification:** Connect a GitHub profile to analyze the user's latest repositories and extract the actual programming languages they use.
+* **⚖️ Bias-Free AI Engine:** Engineered prompts force the AI to ignore demographic markers (name, gender, ethnicity) and evaluate purely on merit.
+* **🎯 Role-Specific ATS Scoring:** Calculates Applicant Tracking System (ATS) match percentages tailored to *specific* roles, along with precise bullet points on how to improve the resume for that exact job.
+* **📈 Experience Detection:** Dynamically detects whether the user is a Fresher or a Senior Professional and adjusts role recommendations accordingly.
+* **🤖 AI Replacement Risk:** Predicts the likelihood of the recommended roles being automated by AI in the future.
+* **💼 Real-Time Job Market Data:** Integrates with JSearch API to fetch active, live job and internship listings directly matching the AI's top recommended role.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Technology Stack
 
-**Use your preferred IDE**
+### Frontend
+* **Framework:** React.js (via Vite)
+* **Styling:** Tailwind CSS
+* **Animations:** Framer Motion
+* **Icons:** Lucide React
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Backend
+* **Framework:** Python Flask
+* **AI Engine:** Google Gemini API (`gemini-1.5-flash`)
+* **Data Parsing:** `PyPDF2`, `python-docx`
+* **External APIs:** GitHub REST API, JSearch (RapidAPI)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🚀 Local Setup & Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Follow these steps to run the project locally on your machine.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
+* Node.js (v18+)
+* Python (3.11+)
+* API Keys for Google Gemini and RapidAPI (JSearch)
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 1. Backend Setup
+Navigate to the `backend` directory and set up the Python environment:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+```bash
+# Navigate to backend folder
+cd backend
 
-**Edit a file directly in GitHub**
+# Create and activate a virtual environment (Windows)
+py -3.11 -m venv venv
+.\venv\Scripts\activate
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Install dependencies
+pip install -r requirements.txt
