@@ -1,17 +1,24 @@
 import { motion } from "framer-motion";
 import {
   Target, ShieldAlert, XCircle, Briefcase, GraduationCap,
-  ChevronRight, AlertTriangle, CheckCircle2, FileSearch
+  ChevronRight, AlertTriangle, CheckCircle2, FileSearch, ExternalLink
 } from "lucide-react";
 
 export interface ResultsData {
-  atsScore: number;
-  atsImprovements: string[];
+  search_term?: string; // NEW: Added search term
   careerPaths: { title: string; match: number; growth: string }[];
   skills: { strong: string[]; missing: string[] };
   rejectionReasons: { reason: string; severity: "high" | "medium" | "low" }[];
   aiRisk: { role: string; risk: number; label: string }[];
-  jobs: { title: string; company: string; type: string; location: string; link: string }[];
+  jobs: { 
+    title: string; 
+    company: string; 
+    type: string; 
+    location: string; 
+    link: string;
+    atsScore: number;
+    improvements: string[];
+  }[];
 }
 
 const severityColors: Record<string, string> = {
@@ -27,24 +34,73 @@ const ResultsDashboard = ({ data }: { data: ResultsData }) => {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
       
-      {/* ATS Score Section (NEW) */}
-      <div className="glass rounded-xl p-6 border-l-4 border-l-primary">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <FileSearch className="w-6 h-6 text-primary" />
-            <h3 className="text-xl font-bold text-foreground">ATS Compatibility Score</h3>
-          </div>
-          <span className={`text-3xl font-black ${data.atsScore > 75 ? 'text-success' : data.atsScore > 50 ? 'text-warning' : 'text-destructive'}`}>
-            {data.atsScore}/100
-          </span>
+      {/* Real-time Jobs with LIVE ATS Scoring */}
+      <div className="glass rounded-xl p-6 border-t-4 border-t-primary">
+        <div className="flex items-center gap-2 mb-6">
+          <GraduationCap className="w-6 h-6 text-primary" />
+          <h3 className="text-xl font-bold text-foreground">Real-Time Opportunities & ATS Match</h3>
         </div>
-        <div className="space-y-2 mt-4">
-          <h4 className="text-sm font-semibold text-foreground uppercase">How to improve:</h4>
-          <ul className="list-disc pl-5 space-y-1">
-            {data.atsImprovements.map((imp, i) => (
-              <li key={i} className="text-sm text-muted-foreground">{imp}</li>
-            ))}
-          </ul>
+        
+        <div className="space-y-4">
+          {data.jobs.length > 0 ? data.jobs.map((j, i) => (
+            <div key={i} className="p-4 rounded-lg bg-secondary/50 border border-border shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+                
+                {/* Job Details */}
+                <div>
+                  <h4 className="font-bold text-lg text-foreground flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-primary" /> {j.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">{j.company} · {j.location}</p>
+                  <span className={`inline-block mt-2 text-xs px-2 py-1 rounded-md font-medium ${j.type.includes("Intern") ? "bg-info/10 text-info" : "bg-primary/10 text-primary"}`}>
+                    {j.type}
+                  </span>
+                </div>
+
+                {/* ATS Score & Apply Button */}
+                <div className="flex flex-col items-start md:items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">ATS Match:</span>
+                    <span className={`text-2xl font-black ${j.atsScore >= 75 ? 'text-success' : j.atsScore >= 50 ? 'text-warning' : 'text-destructive'}`}>
+                      {j.atsScore}%
+                    </span>
+                  </div>
+                  <a href={j.link} target="_blank" rel="noopener noreferrer" className="bg-primary text-primary-foreground text-sm font-bold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    Apply Now
+                  </a>
+                </div>
+              </div>
+
+              {/* Resume Improvement Tips for this specific job */}
+              {j.improvements && j.improvements.length > 0 && (
+                <div className="bg-background rounded-md p-3 border border-border/50">
+                  <h5 className="text-xs font-semibold text-foreground flex items-center gap-1 mb-2">
+                    <FileSearch className="w-3 h-3 text-primary" /> How to improve your resume for this exact role:
+                  </h5>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {j.improvements.map((imp, idx) => (
+                      <li key={idx} className="text-sm text-muted-foreground">{imp}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )) : <p className="text-sm text-muted-foreground text-center py-4">No current listings found. Keep upskilling!</p>}
+
+          {/* NEW: Show More Button */}
+          {data.search_term && (
+            <div className="mt-6 pt-4 flex justify-center border-t border-border">
+              <a 
+                href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(data.search_term)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-primary font-semibold hover:bg-primary/10 px-6 py-3 rounded-lg border-2 border-primary transition-all duration-300"
+              >
+                Show All {data.search_term} Openings
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          )}
         </div>
       </div>
 
@@ -138,30 +194,6 @@ const ResultsDashboard = ({ data }: { data: ResultsData }) => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Jobs & Internships from JSearch */}
-      <div className="glass rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <GraduationCap className="w-5 h-5 text-primary" />
-          <h3 className="font-bold text-foreground">Real-time Opportunities</h3>
-        </div>
-        <div className="space-y-3">
-          {data.jobs.length > 0 ? data.jobs.map((j, i) => (
-            <a href={j.link} target="_blank" rel="noopener noreferrer" key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-surface-hover transition-colors cursor-pointer group">
-              <div>
-                <p className="font-medium text-foreground">{j.title}</p>
-                <p className="text-sm text-muted-foreground">{j.company} · {j.location}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${j.type.includes("Intern") ? "bg-info/10 text-info" : "bg-primary/10 text-primary"}`}>
-                  {j.type}
-                </span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-            </a>
-          )) : <p className="text-sm text-muted-foreground">No current listings found. Keep upskilling!</p>}
         </div>
       </div>
     </motion.div>
