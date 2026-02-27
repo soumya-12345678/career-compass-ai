@@ -90,9 +90,28 @@ def analyze_profile():
         github_skills = get_github_skills(github_url)
 
     try:
-        # STEP 1: Ask AI for the best Job Title to search
-        search_prompt = f"Read this resume: {resume_text[:1000]}. What is the single most accurate job title to search for on a job board? Reply with ONLY the job title (e.g., 'Software Engineer')."
-        search_term = model.generate_content(search_prompt).text.strip()
+        # STEP 1: Ask AI for the best Job Title to search based on WHATEVER data was provided
+        search_prompt = f"""
+        Analyze the candidate's available data to determine the best job search query:
+        Resume Text: {resume_text[:1000] if resume_text else 'None provided'}
+        GitHub Skills: {', '.join(github_skills) if github_skills else 'None provided'}
+        LinkedIn URL: {linkedin_url if linkedin_url else 'None provided'}
+
+        What is the single most accurate job title to search for on a job board? 
+        Reply with ONLY the job title (e.g., Software Engineer, Data Analyst). Do not include any quotes, punctuation, or conversational text.
+        """
+        
+        search_response = model.generate_content(search_prompt).text
+        
+        # Aggressively clean the AI's response so it doesn't break the JSearch API
+        search_term = search_response.replace('"', '').replace("'", '').replace('*', '').strip()
+        search_term = search_term.split('\n')[0][:50] # Take only the first line if it wrote a paragraph
+        
+        # Fallback just in case the AI gets confused by empty inputs
+        if not search_term or search_term.lower() in ["none provided", "unknown"]:
+            search_term = "Software Developer"
+
+        print(f"DEBUG: Searching RapidAPI for exact term: '{search_term}'")
 
         # STEP 2: Fetch real jobs using that term
         real_jobs = get_jobs_from_jsearch(search_term)
