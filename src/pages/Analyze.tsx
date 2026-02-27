@@ -12,18 +12,36 @@ const Analyze = () => {
   const [file, setFile] = useState<File | null>(null);
   const [links, setLinks] = useState({ linkedin: "", github: "" });
   const [analyzing, setAnalyzing] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [results, setResults] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const canAnalyze = file || links.linkedin || links.github;
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!canAnalyze) return;
     setAnalyzing(true);
-    // Simulate AI analysis
-    setTimeout(() => {
+    setError(null);
+
+    const formData = new FormData();
+    if (file) formData.append("resume", file);
+    if (links.linkedin) formData.append("linkedin", links.linkedin);
+    if (links.github) formData.append("github", links.github);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Failed to analyze profile.");
+      
+      const data = await response.json();
+      setResults(data);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
+    } finally {
       setAnalyzing(false);
-      setShowResults(true);
-    }, 2500);
+    }
   };
 
   return (
@@ -44,7 +62,7 @@ const Analyze = () => {
           </p>
         </motion.div>
 
-        {!showResults ? (
+        {!results ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div>
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">Resume</h2>
@@ -55,6 +73,8 @@ const Analyze = () => {
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">Profile Links</h2>
               <ProfileLinks onLinksChange={setLinks} />
             </div>
+
+            {error && <p className="text-destructive text-sm text-center font-medium">{error}</p>}
 
             <button
               onClick={handleAnalyze}
@@ -68,7 +88,7 @@ const Analyze = () => {
               {analyzing ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Analyzing with AI...
+                  Analyzing with AI... (This may take a minute)
                 </>
               ) : (
                 <>
@@ -81,12 +101,12 @@ const Analyze = () => {
         ) : (
           <div>
             <button
-              onClick={() => setShowResults(false)}
+              onClick={() => setResults(null)}
               className="text-sm text-primary hover:text-primary/80 mb-6 inline-flex items-center gap-1 transition-colors"
             >
               ← Modify Input
             </button>
-            <ResultsDashboard />
+            <ResultsDashboard data={results} />
           </div>
         )}
       </div>
