@@ -14,7 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key='AIzaSyDrMi8XHSfjShwrrWhE6t3kYe-B40PXv4I') #os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY")) #
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 def extract_text_from_file(file):
@@ -54,7 +54,7 @@ def get_jobs_from_jsearch(query):
     url = "https://jsearch.p.rapidapi.com/search"
     querystring = {"query": f"{query} in India", "page": "1", "num_pages": "1"}
     headers = {
-        "X-RapidAPI-Key": 'cc1fed8c07msh3eb0fb18b08d20ep17bf02jsn3fd10bcc395e', #api_key,
+        "X-RapidAPI-Key": os.environ.get("RAPID_API_KEY"),
         "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
     }
     

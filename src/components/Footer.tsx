@@ -8,7 +8,7 @@ const Footer = () => (
         <span className="font-semibold text-gradient">CareerCompass</span>
       </div>
       <p className="text-sm text-muted-foreground">
-        © 2026 CareerCompass · Built for Hackathon · AI-Powered Career Intelligence
+        © 2026 CareerCompass · AI-Powered Career Intelligence
       </p>
     </div>
   </footer>
