@@ -28,7 +28,7 @@ const Analyze = () => {
     if (links.github) formData.append("github", links.github);
 
     try {
-      const response = await fetch("http://localhost:5000/api/analyze", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
       });
