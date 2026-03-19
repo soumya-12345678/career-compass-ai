@@ -28,7 +28,7 @@ const Analyze = () => {
     if (links.github) formData.append("github", links.github);
 
     try {
-      const response = await fetch("/api/analyze", {
+      const response = await fetch("/career-compass-backend/analyze", {
         method: "POST",
         body: formData,
       });

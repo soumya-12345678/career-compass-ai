@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from google import genai
 import os
 import json
 import requests
@@ -14,7 +13,31 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# --- Gateway Configuration ---
+# Pulling the URL and your secret password from Coolify's Environment Variables
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://shriyansvps.me/gemini-api/generate")
+GATEWAY_SECRET_KEY = os.environ.get("GATEWAY_SECRET_KEY")
+
+def call_gemini_gateway(prompt, system_instruction="You are a helpful assistant."):
+    """Helper function to route AI requests through your secure Gateway."""
+    if not GATEWAY_SECRET_KEY:
+        raise Exception("Server configuration error: Missing GATEWAY_SECRET_KEY in environment variables.")
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-Key": GATEWAY_SECRET_KEY
+    }
+    payload = {
+        "prompt": prompt,
+        "system_instruction": system_instruction
+    }
+    
+    response = requests.post(GATEWAY_URL, json=payload, headers=headers)
+    
+    if response.status_code == 200:
+        return response.json().get("response", "")
+    else:
+        raise Exception(f"Gateway rejected request (Status {response.status_code}): {response.text}")
 
 def extract_text_from_file(file):
     filename = file.filename.lower()
@@ -89,7 +112,7 @@ def analyze_profile():
         github_skills = get_github_skills(github_url)
 
     try:
-        # STEP 1: Ask AI for the best Job Title to search based on WHATEVER data was provided
+        # STEP 1: Ask AI Gateway for the best Job Title to search
         search_prompt = f"""
         Analyze the candidate's available data to determine the best job search query:
         Resume Text: {resume_text[:1000] if resume_text else 'None provided'}
@@ -100,10 +123,7 @@ def analyze_profile():
         Reply with ONLY the job title (e.g., Software Engineer, Data Analyst). Do not include any quotes, punctuation, or conversational text.
         """
         
-        search_response = client.models.generate_content(
-            model='gemini-2.5-flash', 
-            contents=search_prompt
-        ).text
+        search_response = call_gemini_gateway(search_prompt)
         
         # Aggressively clean the AI's response so it doesn't break the JSearch API
         search_term = search_response.replace('"', '').replace("'", '').replace('*', '').strip()
@@ -125,7 +145,6 @@ def analyze_profile():
 
         # STEP 3: Comprehensive analysis scoring the resume against the REAL jobs
         prompt = f"""
-        You are an AI Career Analyzer.
         CRITICAL INSTRUCTION: Ignore any biased information such as name, gender, age, or ethnicity. Evaluate purely on merit, skills, and experience.
         
         Resume Text: {resume_text}
@@ -160,13 +179,10 @@ def analyze_profile():
         IMPORTANT: The 'jobEvaluations' array MUST have the exact same number of items as the 'Real Jobs' provided, in the exact same order (Job 0, Job 1, Job 2).
         """
 
-        # Call Gemini
-        response = client.models.generate_content(
-            model='gemini-2.5-flash', 
-            contents=prompt
-        )
+        # Call the API Gateway instead of calling Google directly
+        gateway_response_text = call_gemini_gateway(prompt, system_instruction="You are an AI Career Analyzer.")
         
-        clean_json = response.text.replace('```json', '').replace('```', '').strip()
+        clean_json = gateway_response_text.replace('```json', '').replace('```', '').strip()
         parsed_data = json.loads(clean_json)
         
         # Merge ATS scores into the jobs array and clean up descriptions to save bandwidth
