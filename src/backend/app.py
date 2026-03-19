@@ -75,7 +75,7 @@ def get_jobs_from_jsearch(query):
         print(f"JSearch API error: {e}")
         return []
 
-@app.route('/api/analyze', methods=['POST'])
+@app.route('/analyze', methods=['POST'])
 def analyze_profile():
     resume_text = ""
     if 'resume' in request.files:
