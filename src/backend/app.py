@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import google.generativeai as genai
+from google import genai
 import os
 import json
 import requests
@@ -14,8 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY")) #
-model = genai.GenerativeModel('gemini-2.5-flash')
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def extract_text_from_file(file):
     filename = file.filename.lower()
@@ -101,7 +100,10 @@ def analyze_profile():
         Reply with ONLY the job title (e.g., Software Engineer, Data Analyst). Do not include any quotes, punctuation, or conversational text.
         """
         
-        search_response = model.generate_content(search_prompt).text
+        search_response = client.models.generate_content(
+            model='gemini-2.5-flash', 
+            contents=search_prompt
+        ).text
         
         # Aggressively clean the AI's response so it doesn't break the JSearch API
         search_term = search_response.replace('"', '').replace("'", '').replace('*', '').strip()
@@ -159,7 +161,11 @@ def analyze_profile():
         """
 
         # Call Gemini
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash', 
+            contents=prompt
+        )
+        
         clean_json = response.text.replace('```json', '').replace('```', '').strip()
         parsed_data = json.loads(clean_json)
         
