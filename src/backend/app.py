@@ -14,7 +14,6 @@ app = Flask(__name__)
 CORS(app)
 
 # --- Gateway Configuration ---
-# Pulling the URL and your secret password from Coolify's Environment Variables
 GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://shriyansvps.me/gemini-api/generate")
 GATEWAY_SECRET_KEY = os.environ.get("GATEWAY_SECRET_KEY")
 
@@ -32,7 +31,8 @@ def call_gemini_gateway(prompt, system_instruction="You are a helpful assistant.
         "system_instruction": system_instruction
     }
     
-    response = requests.post(GATEWAY_URL, json=payload, headers=headers)
+    # TIMEOUT ADDED: Force connection to snap and report error if stuck
+    response = requests.post(GATEWAY_URL, json=payload, headers=headers, timeout=60)
     
     if response.status_code == 200:
         return response.json().get("response", "")
@@ -60,7 +60,8 @@ def extract_text_from_file(file):
 def get_github_skills(github_url):
     try:
         username = github_url.rstrip('/').split('/')[-1]
-        response = requests.get(f"https://api.github.com/users/{username}/repos?sort=updated")
+        # TIMEOUT ADDED
+        response = requests.get(f"https://api.github.com/users/{username}/repos?sort=updated", timeout=10)
         if response.status_code == 200:
             repos = response.json()
             languages = set()
@@ -81,17 +82,18 @@ def get_jobs_from_jsearch(query):
     }
     
     try:
-        response = requests.get(url, headers=headers, params=querystring)
+        # TIMEOUT ADDED
+        response = requests.get(url, headers=headers, params=querystring, timeout=15)
         data = response.json()
         jobs = []
-        for j in data.get('data', [])[:3]: # Top 3 jobs to stay within token limits
+        for j in data.get('data', [])[:3]: 
             jobs.append({
                 "title": j.get('job_title', 'Role'),
                 "company": j.get('employer_name', 'Company'),
                 "type": "Internship" if "intern" in j.get('job_title', '').lower() else "Full-time",
                 "location": j.get('job_city', 'Remote'),
                 "link": j.get('job_apply_link', '#'),
-                "description": j.get('job_description', '')[:1000] # Get description for ATS scoring
+                "description": j.get('job_description', '')[:1000]
             })
         return jobs
     except Exception as e:
@@ -112,7 +114,6 @@ def analyze_profile():
         github_skills = get_github_skills(github_url)
 
     try:
-        # STEP 1: Ask AI Gateway for the best Job Title to search
         search_prompt = f"""
         Analyze the candidate's available data to determine the best job search query:
         Resume Text: {resume_text[:1000] if resume_text else 'None provided'}
@@ -125,25 +126,20 @@ def analyze_profile():
         
         search_response = call_gemini_gateway(search_prompt)
         
-        # Aggressively clean the AI's response so it doesn't break the JSearch API
         search_term = search_response.replace('"', '').replace("'", '').replace('*', '').strip()
-        search_term = search_term.split('\n')[0][:50] # Take only the first line if it wrote a paragraph
+        search_term = search_term.split('\n')[0][:50] 
         
-        # Fallback just in case the AI gets confused by empty inputs
         if not search_term or search_term.lower() in ["none provided", "unknown"]:
             search_term = "Software Developer"
 
         print(f"DEBUG: Searching RapidAPI for exact term: '{search_term}'")
 
-        # STEP 2: Fetch real jobs using that term
         real_jobs = get_jobs_from_jsearch(search_term)
 
-        # Build context of real jobs
         jobs_context = ""
         for i, job in enumerate(real_jobs):
             jobs_context += f"\n--- JOB {i} ---\nTitle: {job['title']}\nCompany: {job['company']}\nDescription: {job['description']}\n"
 
-        # STEP 3: Comprehensive analysis scoring the resume against the REAL jobs
         prompt = f"""
         CRITICAL INSTRUCTION: Ignore any biased information such as name, gender, age, or ethnicity. Evaluate purely on merit, skills, and experience.
         
@@ -179,13 +175,11 @@ def analyze_profile():
         IMPORTANT: The 'jobEvaluations' array MUST have the exact same number of items as the 'Real Jobs' provided, in the exact same order (Job 0, Job 1, Job 2).
         """
 
-        # Call the API Gateway instead of calling Google directly
         gateway_response_text = call_gemini_gateway(prompt, system_instruction="You are an AI Career Analyzer.")
         
         clean_json = gateway_response_text.replace('```json', '').replace('```', '').strip()
         parsed_data = json.loads(clean_json)
         
-        # Merge ATS scores into the jobs array and clean up descriptions to save bandwidth
         job_evals = parsed_data.pop("jobEvaluations", [])
         final_jobs = []
         for i, job in enumerate(real_jobs):
@@ -195,7 +189,7 @@ def analyze_profile():
             else:
                 job["atsScore"] = 0
                 job["improvements"] = []
-            job.pop("description", None) # Remove raw description from frontend payload
+            job.pop("description", None) 
             final_jobs.append(job)
 
         parsed_data["jobs"] = final_jobs
